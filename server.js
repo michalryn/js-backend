@@ -17,7 +17,8 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.get("/search", async (req, res) => {
-    const data = await movieService.search(`${req.params.query}`)
+    console.log(req.query.name)
+    const data = await movieService.search(`${req.query.name}`)
     res.status(200).send(data);
 });
 
