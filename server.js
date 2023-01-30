@@ -17,141 +17,43 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.get("/search", async (req, res) => {
-    console.log(req.query.name)
-    const data = await movieService.search(`${req.query.name}`)
+    try {
+        const data = await movieService.search(req.query.type, req.query.searchText, req.query.page)
+        res.status(200).send(data);
+    } catch (error) {
+    }
+});
+
+app.get("/trending", async (req, res) => {
+    const data = await movieService.trending(req.query.page)
+    //console.log(data)
     res.status(200).send(data);
 });
 
-app.post("/recordings", (req, res) => {
-    fs.readFile("./db.json", 'utf-8', (err, recordingsJSON) => {
-        if (err) {
-            res.status(400).send("Error while adding the recording to the database");
-        }
-        else {
-            const recordings=JSON5.parse(recordingsJSON);
-            if(recordings.length == 0) {
-                fs.writeFile("./db.json", JSON.stringify(req.body), err => {
-                    if (err) {
-                        res.status(400).send("Error while adding the recordings to the database");
-                    }
-                    else {
-                        res.status(201).send("Recordings added successfully.");
-                    }
-                })
-            }
-            else {
-                res.status(201).send("File db.json is not empty.");
-            }
-        }
-    })
+app.get("/movies", async (req, res) => {
+    const data = await movieService.movies(req.query.page, req.query.genres)
+    //console.log(req.query.genres)
+    res.status(200).send(data);
 });
 
-app.get("/recordings", (req, res) => {
-    console.log("get/recordings");
-    fs.readFile("./db.json", 'utf-8', (err, recordingsJSON) => {
-        if (err) {
-            res.status(500).send("Error while getting the recordings from the database")
-        }
-        else {
-            const recordings=JSON5.parse(recordingsJSON);
-
-            res.status(200).send(recordings)
-        }
-    })
+app.get("/genres", async (req, res) => {
+    const data = await movieService.genres(req.query.genre)
+    res.status(200).send(data)
 })
 
-app.post("/recording", (req, res) => {
-    fs.readFile("./db.json", 'utf-8', (err, recordingsJSON) => {
-        if (err) {
-            res.status(400).send("Error while adding the recording to the database");
-        }
-        else {
-            const recordings=JSON5.parse(recordingsJSON);
-            recordings.push(req.body);
-            var newList = JSON.stringify(recordings);
-            fs.writeFile('./db.json', newList, err => {
-                if (err) {
-                    console.log("Error writing file in POST /recording: "+ err);
-                    res.status(500).send('Error writing file db.json');
-                } else {
-                    res.status(201).send(req.body);
-                    console.log("Successfully wrote file db.json and added new recording with index = " + req.body.id);
-                }
-            });
-        }
-    })
+app.get("/series", async (req, res) => {
+    const data = await movieService.series(req.query.page, req.query.genres)
+    res.status(200).send(data);
 });
 
-app.put('/recording/:index', (req, res) => {
-    fs.readFile('./db.json', 'utf8', (err, recordingsJson) => {
-        if (err) {
-            console.log("File read failed in PUT /recording/" + req.params.index+": "+ err);
-            res.status(500).send('File read failed');
-            return;
-        }
-        var recordings = JSON.parse(recordingsJson);
-        var recordingg = recordings.find(recordingtmp => recordingtmp.id == req.params.index);
-        if (!recordingg) {
-            recordings.push(req.body);
-            var newList = JSON.stringify(recordings);
-            fs.writeFile('./db.json', newList, err => {
-                if (err) {
-                    console.log("Error writing file in PUT /recording/" + req.params.index+": "+err);
-                    res.status(500).send('Error writing file db.json');
-                } else {
-                    res.status(201).send(req.body);
-                    console.log("Successfully wrote file db.json and added new recording with index = " + req.body.id);
-                }
-            });
-        } else {
-            for (var i = 0; i < recordings.length; i++) {
-                if (recordings[i].id == recordingg.id) {
-                    recordings[i] = req.body;
-                }
-            }
-            var newList = JSON.stringify(recordings);
-            fs.writeFile('./db.json', newList, err => {
-                if (err) {
-                    console.log("Error writing file in PUT /recording/" + req.params.index+": "+ err);
-                    res.status(500).send('Error writing file db.json');
-                } else {
-                    res.status(200).send(req.body);
-                    console.log("Successfully wrote file db.json and edit recording with old index = " + req.params.index);
-                }
-            });
-        }
-    });
-});
+app.get("/details", async (req, res) => {
+    const data = await movieService.details(req.query.mediaType, req.query.id)
+    res.status(200).send(data);
+})
 
-app.delete('/recording/:index', (req, res) => {
-    fs.readFile('./db.json', 'utf8', (err, recordingsJson) => {
-        if (err) {
-            console.log("File read failed in DELETE /recordings: "+ err);
-            res.status(500).send('File read failed');
-            return;
-        }
-        var recordings = JSON.parse(recordingsJson);
-        var recordingIndex = recordings.findIndex(recordingtmp => recordingtmp.id == req.params.index);
-        if (recordingIndex != -1) {
-            recordings.splice(recordingIndex, 1);
-            var newList = JSON.stringify(recordings);
-            fs.writeFile('./db.json', newList, err => {
-                if (err) {
-                    console.log("Error writing file in DELETE /recordings/" + req.params.index+": "+ err);
-                    res.status(500).send('Error writing file db.json');
-                } else {
-                    res.status(204).send();
-                    console.log("Successfully deleted recording with index = " + req.params.index);
-                }
-            });
-        } else {
-            console.log("recording by index = " + req.params.index + " does not exists");
-            res.status(500).send('recording by index = ' + req.params.index + ' does not exists');
-            return;
-        }
-    });
-});
+app.get("/fetchVideo", async (req, res) => {
+    const data = await movieService.fetchVideo(req.query.mediaType, req.query.id)
+    res.status(200).send(data);
+})
 
 app.listen(7777, () => console.log("Server address http://localhost:7777"));
-
-//node -r esm server.js
